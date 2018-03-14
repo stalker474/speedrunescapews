@@ -9,8 +9,8 @@ import (
 )
 
 const driverType = "mysql"
-const user = "admin:admin@tcp(127.0.0.1:3306)/"
-const dbName = "speedrunescape"
+const user = "u3uhtccyht5t4ysp:3qH70xpRHfiilzUqkLU@tcp(b0stcadoi-mysql.services.clever-cloud.com:3306)/"
+const dbName = "b0stcadoi"
 
 //Database our main database for storing accounts
 type Database struct {
