@@ -5,7 +5,7 @@ import (
 	"errors"
 	"log"
 
-	_ "github.com/mysql" //required by sql
+	_ "github.com/go-sql-driver/mysql" //required by sql
 )
 
 const driverType = "mysql"
