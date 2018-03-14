@@ -1,0 +1,5 @@
+go build -ldflags "-s -w"
+
+./test2.exe IDEX HORSE 10 6078.447 650
+
+./test2.exe BINANCE REQ 10 440 268
