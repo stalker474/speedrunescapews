@@ -5,7 +5,7 @@ import (
 	"errors"
 	"log"
 
-	_ "github.com/mysql-master" //required by sql
+	_ "github.com/mysql" //required by sql
 )
 
 const driverType = "mysql"
