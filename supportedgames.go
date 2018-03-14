@@ -1,4 +1,4 @@
-package webapp
+package main
 
 //SupportedGames List of currently supported games
 var SupportedGames = [...]JSONSupportedGame{

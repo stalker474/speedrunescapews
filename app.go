@@ -1,4 +1,4 @@
-package webapp
+package main
 
 import (
 	"strconv"
@@ -7,21 +7,17 @@ import (
 	"errors"
 
 	"math"
-
-	"../db"
-	"../runescape"
-	"../tools"
 )
 
 // App main application
 type App struct {
 	// Db access to the data
-	Db *db.Database
+	Db *Database
 }
 
 // Init construct the app object
 func (a *App) Init() {
-	a.Db = db.NewDatabase()
+	a.Db = NewDatabase()
 	a.Db.Connect()
 	a.Db.Init()
 }
@@ -38,7 +34,7 @@ func (a *App) addUser(username string, password string) error {
 	if err := a.findUser(username); err == nil {
 		return errors.New("User already exists")
 	}
-	a.Db.AddUser(&db.User{username, password})
+	a.Db.AddUser(&User{username, password})
 	return nil
 }
 
@@ -67,7 +63,7 @@ func (a *App) authUser(username string, password string) error {
 	return errors.New("User not found")
 }
 
-func (a *App) createChallenge(name string, username string, opponent string, gameT db.GameType) (int, error) {
+func (a *App) createChallenge(name string, username string, opponent string, gameT GameType) (int, error) {
 	if name == "" {
 		return 0, errors.New("A challenge must have a name")
 	}
@@ -84,8 +80,8 @@ func (a *App) createChallenge(name string, username string, opponent string, gam
 		return 0, errors.New("Opponent not found")
 	}
 
-	challenge := db.Challenge{}
-	challenge.ID = tools.GenerateID()
+	challenge := Challenge{}
+	challenge.ID = GenerateID()
 	challenge.Name = name
 	challenge.Completed = false
 
@@ -94,15 +90,15 @@ func (a *App) createChallenge(name string, username string, opponent string, gam
 	challenge.GameType = gameT
 	challenge.WinnerCreator = false
 
-	acc1 := runescape.CreateGameAccount(gameT == db.TYPERS3)
-	gameAcc1 := db.GameAccount{acc1.Username, acc1.Private.Email, acc1.Private.Password}
+	acc1 := CreateGameAccount(gameT == TYPERS3)
+	gameAcc1 := GameAccount{acc1.Username, acc1.Private.Email, acc1.Private.Password}
 
 	if err := a.Db.AddGameAccount(&gameAcc1); err != nil {
 		return 0, errors.New("Failed to create game account")
 	}
 
-	acc2 := runescape.CreateGameAccount(gameT == db.TYPERS3)
-	gameAcc2 := db.GameAccount{acc2.Username, acc2.Private.Email, acc2.Private.Password}
+	acc2 := CreateGameAccount(gameT == TYPERS3)
+	gameAcc2 := GameAccount{acc2.Username, acc2.Private.Email, acc2.Private.Password}
 
 	if err := a.Db.AddGameAccount(&gameAcc2); err != nil {
 		return 0, errors.New("Failed to create game account")
@@ -122,9 +118,9 @@ func (a *App) createChallenge(name string, username string, opponent string, gam
 }
 
 func (a *App) validateChallenge(id int, username string) error {
-	var challenge db.Challenge
-	var g1, g2 db.GameAccount
-	var gacc *runescape.RSGameAccount
+	var challenge Challenge
+	var g1, g2 GameAccount
+	var gacc *RSGameAccount
 	var err error
 	if challenge, err = a.Db.FindChallenge(id); err != nil {
 		return errors.New("Challenge not found")
@@ -139,8 +135,8 @@ func (a *App) validateChallenge(id int, username string) error {
 		return errors.New("Failed to find opponents game account")
 	}
 
-	creatorStats := runescape.LoadGameAccount(challenge.GameType == db.TYPERS3, g1.Username)
-	opponentStats := runescape.LoadGameAccount(challenge.GameType == db.TYPERS3, g2.Username)
+	creatorStats := LoadGameAccount(challenge.GameType == TYPERS3, g1.Username)
+	opponentStats := LoadGameAccount(challenge.GameType == TYPERS3, g2.Username)
 	if creatorStats == nil || opponentStats == nil {
 		return errors.New("Failed to init game accounts stats fetchers")
 	}
@@ -162,7 +158,7 @@ func (a *App) validateChallenge(id int, username string) error {
 	}
 
 	if challenge.Name == "Total Lvl" {
-		var el runescape.SkillData
+		var el SkillData
 		var found bool
 		if el, found = gacc.LiveData.Data["Overall"]; !found {
 			return errors.New("Unexpected stats chart")
@@ -171,7 +167,7 @@ func (a *App) validateChallenge(id int, username string) error {
 			return errors.New("Failed to achieve total lvl 800, current lvl " + strconv.Itoa(el.Level))
 		}
 	} else if challenge.Name == "Combat Lvl" {
-		var attack, defence, strength, hitpoints, prayer, ranged, magic runescape.SkillData
+		var attack, defence, strength, hitpoints, prayer, ranged, magic SkillData
 		var found bool
 		if attack, found = gacc.LiveData.Data["Attack"]; !found {
 			return errors.New("Unexpected stats chart")
@@ -207,7 +203,7 @@ func (a *App) validateChallenge(id int, username string) error {
 			return errors.New("Failed to achieve combat lvl 45, current lvl " + strconv.Itoa(level))
 		}
 	} else if challenge.Name == "Complete Demon Slayer quest" {
-		if challenge.GameType != db.TYPERS3 {
+		if challenge.GameType != TYPERS3 {
 			return errors.New("This challenge isnt available for this game")
 		}
 		found := false
@@ -220,7 +216,7 @@ func (a *App) validateChallenge(id int, username string) error {
 			return errors.New("The quest Demon Slayer isn't completed yet")
 		}
 	} else if challenge.Name == "Complete Dragon Slayer quest" {
-		if challenge.GameType != db.TYPERS3 {
+		if challenge.GameType != TYPERS3 {
 			return errors.New("This challenge isnt available for this game")
 		}
 		found := false

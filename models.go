@@ -1,4 +1,4 @@
-package db
+package main
 
 // User an app user
 type User struct {

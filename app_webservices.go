@@ -1,10 +1,9 @@
-package webapp
+package main
 
 import (
 	"encoding/json"
 	"net/http"
 
-	"../db"
 	"github.com/gorilla/mux"
 )
 
@@ -106,12 +105,12 @@ func CreateChallenge(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var gType db.GameType
+	var gType GameType
 	switch createGame.Game {
 	case "Old School Runescape":
-		gType = db.TYPEOSRS
+		gType = TYPEOSRS
 	case "Runescape3":
-		gType = db.TYPERS3
+		gType = TYPERS3
 	default:
 		respondJSONError(w, "Game not supported")
 		return
@@ -177,11 +176,11 @@ func GetChallenges(w http.ResponseWriter, r *http.Request) {
 			data := JSONChallengeData{}
 			data.ID = challenge.ID
 			switch challenge.GameState {
-			case db.WAITING:
+			case WAITING:
 				data.Status = "WAITING"
-			case db.STARTED:
+			case STARTED:
 				data.Status = "STARTED"
-			case db.COMPLETED:
+			case COMPLETED:
 				data.Status = "COMPLETED"
 			default:
 				data.Status = "UNKNOWN"
@@ -191,14 +190,14 @@ func GetChallenges(w http.ResponseWriter, r *http.Request) {
 			data.WinnerCreator = challenge.WinnerCreator
 
 			switch challenge.GameType {
-			case db.TYPERS3:
+			case TYPERS3:
 				data.Game = SupportedGames[0]
-			case db.TYPEOSRS:
+			case TYPEOSRS:
 				data.Game = SupportedGames[1]
 			}
 
-			if challenge.GameState >= db.STARTED {
-				var acc db.GameAccount
+			if challenge.GameState >= STARTED {
+				var acc GameAccount
 				var erro error
 				if challenge.Creator == usr.Username {
 					acc, erro = WSApp.Db.FindGameAccount(challenge.CreatorAccount)
@@ -241,13 +240,13 @@ func Accept(w http.ResponseWriter, r *http.Request) {
 			respondJSONError(w, "Only the opponent can accept")
 			return
 		}
-		if challenge.GameState != db.WAITING {
+		if challenge.GameState != WAITING {
 			respondJSONError(w, "This game is not in waiting mode")
 			return
 		}
 		w.WriteHeader(http.StatusOK)
 		//change game state
-		challenge.GameState = db.STARTED
+		challenge.GameState = STARTED
 		if err := WSApp.Db.UpdateChallenge(&challenge); err != nil {
 			respondJSONError(w, err.Error())
 			return
@@ -259,7 +258,7 @@ func Accept(w http.ResponseWriter, r *http.Request) {
 	respondJSONError(w, "Game not found")
 }
 
-// Accept WS
+// Decline WS
 func Decline(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	var usr JSONAccept
@@ -277,13 +276,13 @@ func Decline(w http.ResponseWriter, r *http.Request) {
 			respondJSONError(w, "Only a participant can decline")
 			return
 		}
-		if challenge.GameState != db.WAITING {
+		if challenge.GameState != WAITING {
 			respondJSONError(w, "This game is not in waiting mode")
 			return
 		}
 		w.WriteHeader(http.StatusOK)
 		//change game state
-		challenge.GameState = db.STARTED
+		challenge.GameState = STARTED
 
 		if err := WSApp.Db.RemoveChallenge(&challenge); err != nil {
 			respondJSONError(w, err.Error())
@@ -310,11 +309,11 @@ func Terminate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if challenge, err := WSApp.Db.FindChallenge(usr.ID); err == nil {
-		if challenge.GameState != db.STARTED {
+		if challenge.GameState != STARTED {
 			respondJSONError(w, "This game is not started yet")
 			return
 		}
-		if challenge.GameState == db.COMPLETED {
+		if challenge.GameState == COMPLETED {
 			respondJSONError(w, "This game is already completed")
 			return
 		}
@@ -324,7 +323,7 @@ func Terminate(w http.ResponseWriter, r *http.Request) {
 		}
 		w.WriteHeader(http.StatusOK)
 		//change game state
-		challenge.GameState = db.COMPLETED
+		challenge.GameState = COMPLETED
 		challenge.WinnerCreator = usr.Username == challenge.Creator
 		if err := WSApp.Db.UpdateChallenge(&challenge); err != nil {
 			respondJSONError(w, err.Error())

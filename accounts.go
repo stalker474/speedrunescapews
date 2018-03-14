@@ -1,8 +1,4 @@
-package runescape
-
-import (
-	"../tools"
-)
+package main
 
 // AccountPrivateData private data
 type AccountPrivateData struct {
@@ -24,11 +20,11 @@ func CreateGameAccount(IsRS3 bool) *RSGameAccount {
 	acc := new(RSGameAccount)
 	acc.IsRS3 = IsRS3
 	//generate random name
-	acc.Username = tools.GenerateRandomName()
+	acc.Username = GenerateRandomName()
 	//and password
-	acc.Private.Password = tools.GenerateRandomPassword()
+	acc.Private.Password = GenerateRandomPassword()
 	//and mail
-	acc.Private.Email = tools.GenerateMail(acc.Username)
+	acc.Private.Email = GenerateMail(acc.Username)
 	return acc
 }
 
