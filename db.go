@@ -4,17 +4,15 @@ import (
 	"database/sql"
 	"errors"
 	"log"
+	"os"
 
 	_ "github.com/go-sql-driver/mysql" //required by sql
 )
 
 const driverType = "mysql"
 
-const user = "u3uhtccyht5t4ysp:3qH70xpRHfiilzUqkLU@tcp(b0stcadoi-mysql.services.clever-cloud.com:3306)/"
-const dbName = "b0stcadoi"
-
-//const user = "admin:admin@tcp(127.0.0.1:3306)/"
-//const dbName = "speedrunescape"
+const defaultUser = "admin:admin@tcp(127.0.0.1:3306)/"
+const defaultDbName = "speedrunescape"
 
 //Database our main database for storing accounts
 type Database struct {
@@ -92,6 +90,20 @@ func (thisDatabase *Database) Reset() {
 
 // Connect Connect to the database
 func (thisDatabase *Database) Connect() {
+	var externalDbName = os.Getenv("MYSQL_ADDON_DB")
+	var externalHost = os.Getenv("MYSQL_ADDON_HOST")
+	var externalPassword = os.Getenv("MYSQL_ADDON_PASSWORD")
+	var externalPort = os.Getenv("MYSQL_ADDON_PORT")
+	var externalUser = os.Getenv("MYSQL_ADDON_USER")
+
+	var dbName = defaultDbName
+	var user = defaultUser
+
+	if externalHost != "" && externalPassword != "" && externalPort != "" && externalUser != "" && externalDbName != "" {
+		dbName = externalDbName
+		user = externalUser + ":" + externalPassword + "@tcp(" + externalHost + ":" + externalPort + ")/"
+	}
+
 	db, err := sql.Open(driverType, user)
 	if err != nil {
 		log.Fatal(err)
@@ -115,6 +127,12 @@ func (thisDatabase *Database) Close() {
 }
 
 func (thisDatabase *Database) checkConnection() {
+	var dbName = defaultDbName
+	var externalDbName = os.Getenv("MYSQL_ADDON_DB")
+
+	if externalDbName != "" {
+		dbName = externalDbName
+	}
 	if thisDatabase.db == nil {
 		log.Fatal("Database is not connected")
 	} else {
