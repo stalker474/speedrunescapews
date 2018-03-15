@@ -61,12 +61,12 @@ func (thisDatabase *Database) Init() {
 		INDEX opponentAccount_idx (opponentAccount ASC),
 		CONSTRAINT creatorAccount
 		  FOREIGN KEY (creatorAccount)
-		  REFERENCES gameaccount (username)
+		  REFERENCES GameAccount (username)
 		  ON DELETE CASCADE
 		  ON UPDATE CASCADE,
 		CONSTRAINT opponentAccount
 		  FOREIGN KEY (opponentAccount)
-		  REFERENCES gameaccount (username)
+		  REFERENCES GameAccount (username)
 		  ON DELETE CASCADE
 		  ON UPDATE CASCADE)`)
 	if err != nil {
