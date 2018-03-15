@@ -21,7 +21,6 @@ func (a *App) Init() {
 	a.Db.Connect()
 	defer a.Db.Close()
 	a.Db.Init()
-	a.Db.Close()
 }
 
 // Close destroys the app object
