@@ -3,10 +3,13 @@ package main
 import (
 	"encoding/json"
 	"net/http"
+	"os"
 
 	"github.com/gorilla/mux"
 	"github.com/rs/cors"
 )
+
+const defaultPort = "8080"
 
 //WSApp global application
 var WSApp = App{}
@@ -36,7 +39,13 @@ func (*App) StartWS() {
 
 	handler := c.Handler(router)
 
-	http.ListenAndServe(":8080", handler)
+	var port = defaultPort
+	var externalPort = os.Getenv("PORT")
+	if externalPort != "" {
+		port = externalPort
+	}
+
+	http.ListenAndServe(":"+port, handler)
 }
 
 func respondJSONError(w http.ResponseWriter, msg string) {
