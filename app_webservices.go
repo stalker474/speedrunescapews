@@ -171,8 +171,6 @@ func GetSupportedGames(w http.ResponseWriter, r *http.Request) {
 
 // GetChallenges WS
 func GetChallenges(w http.ResponseWriter, r *http.Request) {
-	WSApp.Db.Connect()
-	defer WSApp.Db.Close()
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	var usr JSONUser
 	var res JSONChallengesList
@@ -239,8 +237,6 @@ func GetChallenges(w http.ResponseWriter, r *http.Request) {
 
 // Accept WS
 func Accept(w http.ResponseWriter, r *http.Request) {
-	WSApp.Db.Connect()
-	defer WSApp.Db.Close()
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	var usr JSONAccept
 	var res JSONResult
@@ -277,8 +273,6 @@ func Accept(w http.ResponseWriter, r *http.Request) {
 
 // Decline WS
 func Decline(w http.ResponseWriter, r *http.Request) {
-	WSApp.Db.Connect()
-	defer WSApp.Db.Close()
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	var usr JSONAccept
 	var res JSONResult
@@ -316,8 +310,6 @@ func Decline(w http.ResponseWriter, r *http.Request) {
 
 // Terminate WS
 func Terminate(w http.ResponseWriter, r *http.Request) {
-	WSApp.Db.Connect()
-	defer WSApp.Db.Close()
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	var usr JSONAccept
 	var res JSONResult

@@ -19,18 +19,15 @@ type App struct {
 func (a *App) Init() {
 	a.Db = NewDatabase()
 	a.Db.Connect()
-	defer a.Db.Close()
 	a.Db.Init()
 }
 
 // Close destroys the app object
 func (a *App) Close() {
-
+	a.Db.Close()
 }
 
 func (a *App) addUser(username string, password string) error {
-	a.Db.Connect()
-	defer a.Db.Close()
 	if len(username) < 4 {
 		return errors.New("User must be at least 4 characters long")
 	}
@@ -42,8 +39,6 @@ func (a *App) addUser(username string, password string) error {
 }
 
 func (a *App) removeUser(username string) error {
-	a.Db.Connect()
-	defer a.Db.Close()
 	if user, err := a.Db.FindUser(username); err == nil {
 		a.Db.RemoveUser(&user)
 		return nil
@@ -52,8 +47,6 @@ func (a *App) removeUser(username string) error {
 }
 
 func (a *App) findUser(username string) error {
-	a.Db.Connect()
-	defer a.Db.Close()
 	if _, err := a.Db.FindUser(username); err == nil {
 		return nil
 	}
@@ -61,8 +54,6 @@ func (a *App) findUser(username string) error {
 }
 
 func (a *App) authUser(username string, password string) error {
-	a.Db.Connect()
-	defer a.Db.Close()
 	if user, err := a.Db.FindUser(username); err == nil {
 		if user.Password == password {
 			return nil
@@ -73,8 +64,6 @@ func (a *App) authUser(username string, password string) error {
 }
 
 func (a *App) createChallenge(name string, username string, opponent string, gameT GameType) (int, error) {
-	a.Db.Connect()
-	defer a.Db.Close()
 	if name == "" {
 		return 0, errors.New("A challenge must have a name")
 	}
@@ -129,8 +118,6 @@ func (a *App) createChallenge(name string, username string, opponent string, gam
 }
 
 func (a *App) validateChallenge(id int, username string) error {
-	a.Db.Connect()
-	defer a.Db.Close()
 	var challenge Challenge
 	var g1, g2 GameAccount
 	var gacc *RSGameAccount
