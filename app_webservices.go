@@ -5,10 +5,15 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+	"github.com/rs/cors"
 )
 
 //WSApp global application
 var WSApp = App{}
+
+func allowAll(origin string) bool {
+	return true
+}
 
 // StartWS Create a new game with a friend
 func (*App) StartWS() {
@@ -23,7 +28,15 @@ func (*App) StartWS() {
 	router.HandleFunc("/decline", Decline).Methods("POST")
 	router.HandleFunc("/terminate", Terminate).Methods("POST")
 	router.HandleFunc("/supportedgames", GetSupportedGames).Methods("GET")
-	http.ListenAndServe(":8080", router)
+
+	c := cors.New(cors.Options{
+		AllowOriginFunc:  allowAll,
+		AllowCredentials: true,
+	})
+
+	handler := c.Handler(router)
+
+	http.ListenAndServe(":8080", handler)
 }
 
 func respondJSONError(w http.ResponseWriter, msg string) {
