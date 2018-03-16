@@ -2,11 +2,15 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"os"
 
+	"github.com/auth0-community/go-auth0"
+	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/rs/cors"
+	jose "gopkg.in/square/go-jose.v2"
 )
 
 const defaultPort = "8080"
@@ -18,19 +22,44 @@ func allowAll(origin string) bool {
 	return true
 }
 
+/* Set up a global string for our secret */
+var mySigningKey = []byte("secret")
+
+func authMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		secret := []byte("YVpSiDm6qS7tT0cy2Lk_p8pSdbMMi8njVihwM0EDVd2e1ompEzxVETiT8b42b5m_")
+		secretProvider := auth0.NewKeyProvider(secret)
+		audience := []string{"https://speedrunescape.eu.auth0.com/userinfo"}
+
+		configuration := auth0.NewConfiguration(secretProvider, audience, "https://speedrunescape.eu.auth0.com/", jose.HS256)
+		validator := auth0.NewValidator(configuration, nil)
+
+		token, err := validator.ValidateRequest(r)
+
+		if err != nil {
+			fmt.Println(err)
+			fmt.Println("Token is not valid:", token)
+			w.WriteHeader(http.StatusUnauthorized)
+			w.Write([]byte("Unauthorized"))
+		} else {
+			next.ServeHTTP(w, r)
+		}
+	})
+}
+
 // StartWS Create a new game with a friend
 func (*App) StartWS() {
 	router := mux.NewRouter()
-	router.HandleFunc("/createuser", CreateUser).Methods("POST")
-	router.HandleFunc("/deleteuser", DeleteUser).Methods("POST")
-	router.HandleFunc("/authenticate", LoginUser).Methods("POST")
-	router.HandleFunc("/finduser", GetUserByName).Methods("POST")
-	router.HandleFunc("/newchallenge", CreateChallenge).Methods("POST")
-	router.HandleFunc("/mychallenges", GetChallenges).Methods("POST")
-	router.HandleFunc("/accept", Accept).Methods("POST")
-	router.HandleFunc("/decline", Decline).Methods("POST")
-	router.HandleFunc("/terminate", Terminate).Methods("POST")
-	router.HandleFunc("/supportedgames", GetSupportedGames).Methods("GET")
+	router.Handle("/createuser", CreateUserHandler).Methods("POST")
+	router.Handle("/deleteuser", authMiddleware(DeleteUserHandler)).Methods("POST")
+	router.Handle("/authenticate", LoginUserHandler).Methods("POST")
+	router.Handle("/finduser", GetUserByNameHandler).Methods("POST")
+	router.Handle("/newchallenge", authMiddleware(CreateChallengeHandler)).Methods("POST")
+	router.Handle("/mychallenges", authMiddleware(GetChallengesHandler)).Methods("POST")
+	router.Handle("/accept", authMiddleware(AcceptHandler)).Methods("POST")
+	router.Handle("/decline", authMiddleware(DeclineHandler)).Methods("POST")
+	router.Handle("/terminate", authMiddleware(TerminateHandler)).Methods("POST")
+	router.Handle("/supportedgames", GetSupportedGamesHandler).Methods("GET")
 
 	c := cors.New(cors.Options{
 		AllowOriginFunc:  allowAll,
@@ -38,6 +67,7 @@ func (*App) StartWS() {
 	})
 
 	handler := c.Handler(router)
+	logHandler := handlers.LoggingHandler(os.Stdout, handler)
 
 	var port = defaultPort
 	var externalPort = os.Getenv("PORT")
@@ -45,7 +75,7 @@ func (*App) StartWS() {
 		port = externalPort
 	}
 
-	http.ListenAndServe(":"+port, handler)
+	http.ListenAndServe(":"+port, logHandler)
 }
 
 func respondJSONError(w http.ResponseWriter, msg string) {
@@ -55,8 +85,8 @@ func respondJSONError(w http.ResponseWriter, msg string) {
 	json.NewEncoder(w).Encode(res)
 }
 
-// CreateUser WS
-func CreateUser(w http.ResponseWriter, r *http.Request) {
+// CreateUserHandler WS
+var CreateUserHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	var usr JSONAuth
 	var res = JSONResult{"OK"}
@@ -73,10 +103,10 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 	}
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(res)
-}
+})
 
-// DeleteUser WS
-func DeleteUser(w http.ResponseWriter, r *http.Request) {
+// DeleteUserHandler WS
+var DeleteUserHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	var usr JSONUser
 	var res = JSONResult{"OK"}
@@ -93,10 +123,10 @@ func DeleteUser(w http.ResponseWriter, r *http.Request) {
 	}
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(res)
-}
+})
 
-// LoginUser WS
-func LoginUser(w http.ResponseWriter, r *http.Request) {
+// LoginUserHandler WS
+var LoginUserHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	var usr JSONAuth
 	var res = JSONResult{"OK"}
@@ -113,10 +143,10 @@ func LoginUser(w http.ResponseWriter, r *http.Request) {
 	}
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(res)
-}
+})
 
-// CreateChallenge WS
-func CreateChallenge(w http.ResponseWriter, r *http.Request) {
+// CreateChallengeHandler WS
+var CreateChallengeHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	var createGame JSONCreateChallenge
 	var res = JSONResult{"OK"}
@@ -144,10 +174,10 @@ func CreateChallenge(w http.ResponseWriter, r *http.Request) {
 	}
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(res)
-}
+})
 
-// GetUserByName WS
-func GetUserByName(w http.ResponseWriter, r *http.Request) {
+// GetUserByNameHandler WS
+var GetUserByNameHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	var usr JSONUser
 	var res = JSONResult{"OK"}
@@ -164,10 +194,10 @@ func GetUserByName(w http.ResponseWriter, r *http.Request) {
 	}
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(res)
-}
+})
 
-// GetSupportedGames WS
-func GetSupportedGames(w http.ResponseWriter, r *http.Request) {
+// GetSupportedGamesHandler WS
+var GetSupportedGamesHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	w.WriteHeader(http.StatusOK)
 	var res = JSONSupportedGamesList{}
@@ -176,10 +206,10 @@ func GetSupportedGames(w http.ResponseWriter, r *http.Request) {
 		res.Games = append(res.Games, g)
 	}
 	json.NewEncoder(w).Encode(res)
-}
+})
 
-// GetChallenges WS
-func GetChallenges(w http.ResponseWriter, r *http.Request) {
+// GetChallengesHandler WS
+var GetChallengesHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	var usr JSONUser
 	var res JSONChallengesList
@@ -242,10 +272,10 @@ func GetChallenges(w http.ResponseWriter, r *http.Request) {
 	}
 
 	json.NewEncoder(w).Encode(res)
-}
+})
 
-// Accept WS
-func Accept(w http.ResponseWriter, r *http.Request) {
+// AcceptHandler WS
+var AcceptHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	var usr JSONAccept
 	var res JSONResult
@@ -278,10 +308,10 @@ func Accept(w http.ResponseWriter, r *http.Request) {
 	}
 
 	respondJSONError(w, "Game not found")
-}
+})
 
-// Decline WS
-func Decline(w http.ResponseWriter, r *http.Request) {
+// DeclineHandler WS
+var DeclineHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	var usr JSONAccept
 	var res JSONResult
@@ -315,10 +345,10 @@ func Decline(w http.ResponseWriter, r *http.Request) {
 	}
 
 	respondJSONError(w, "Game not found")
-}
+})
 
-// Terminate WS
-func Terminate(w http.ResponseWriter, r *http.Request) {
+// TerminateHandler WS
+var TerminateHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	var usr JSONAccept
 	var res JSONResult
@@ -356,4 +386,4 @@ func Terminate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	respondJSONError(w, "Game not found")
-}
+})
